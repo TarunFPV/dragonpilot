@@ -334,22 +334,11 @@ class CarState(CarStateBase):
         ("LKAS_HUD", 1),
       ]
 
-    # --- จุดที่ต้องแก้ไข ---
     if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       messages += [
         ("PRE_COLLISION", 33),
-        ("ACC_CONTROL", 33), # เพิ่ม "DISTANCE" เข้าไปในนี้ไม่ได้โดยตรงเพราะโครงสร้าง DP ต่างจาก Tapecom
+        ("ACC_CONTROL", 33),
         ("PCS_HUD", 1),
       ]
-    
-    # วิธีที่ปลอดภัยที่สุดสำหรับ Dragonpilot คือการใช้การดึงค่าแบบสัญญาณ (Signals) 
-    # แต่เนื่องจาก DP ใช้โครงสร้าง messages list ถ้าคุณต้องการดึง DISTANCE
-    # ให้คุณเปลี่ยนบรรทัด ("ACC_CONTROL", 33) เป็นการประกาศแบบลงลึกดังนี้ครับ:
-    
-  
-      # ถ้าเป็น TSS2 ให้ดึง ACC_CONTROL มาแบบอ่าน Signals 
-      # เพื่อให้ดึงค่า DISTANCE ออกมาได้
-      # คุณต้องมั่นใจว่าในไฟล์ DBC ของรถคุณมีสัญญาณ DISTANCE อยู่ใน ACC_CONTROL
-      messages.append(("ACC_CONTROL", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
