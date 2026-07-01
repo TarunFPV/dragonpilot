@@ -58,6 +58,7 @@ class CarController:
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
+    self.standstill_hack = True  # <--- [เพิ่มโค้ดบรรทัดนี้ลงไปตรงนี้ได้เลยครับ]
     self.steer_rate_counter = 0
 
     self.packer = CANPacker(dbc_name)
@@ -218,13 +219,12 @@ class CarController:
     if not CC.enabled and CS.pcm_acc_status:
       pcm_cancel_cmd = 1
 
-    # on entering standstill, send standstill request
-    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor):
+   # on entering standstill, send standstill request
+    # [แก้ไข]: เปลี่ยน CS.CP เป็น self.CP ให้ตรงกับโครงสร้างใหม่ และคงเงื่อนไข DP ไว้
+    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor) and not self.standstill_hack:
       self.standstill_req = True
     if CS.pcm_acc_status != 8:
       # pcm entered standstill or it's disabled
-      self.standstill_req = False
-    if self.dp_toyota_sng:
       self.standstill_req = False
 
     self.last_standstill = CS.out.standstill
@@ -240,11 +240,14 @@ class CarController:
       # Lexus IS uses a different cancellation message
       if pcm_cancel_cmd and self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
         can_sends.append(toyotacan.create_acc_cancel_command(self.packer))
+      # [แก้ไข]: เปลี่ยน CS.CP เป็น self.CP
       elif self.CP.openpilotLongitudinalControl:
-        can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type, fcw_alert))
+        # [แก้ไข]: เติม toyotacan. ไว้ข้างหน้า และใช้ getattr เพื่อกัน Error
+        can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type, getattr(CS, 'distance_btn', 0)))
         self.accel = pcm_accel_cmd
       else:
-        can_sends.append(toyotacan.create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type, False))
+        # [แก้ไข]: เติม toyotacan. ไว้ข้างหน้า และใช้ getattr เพื่อกัน Error
+        can_sends.append(toyotacan.create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type, getattr(CS, 'distance_btn', 0)))
 
     if self.frame % 2 == 0 and self.CP.enableGasInterceptor and self.CP.openpilotLongitudinalControl:
       # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.
