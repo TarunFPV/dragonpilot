@@ -346,12 +346,7 @@ class CarState(CarStateBase):
     # แต่เนื่องจาก DP ใช้โครงสร้าง messages list ถ้าคุณต้องการดึง DISTANCE
     # ให้คุณเปลี่ยนบรรทัด ("ACC_CONTROL", 33) เป็นการประกาศแบบลงลึกดังนี้ครับ:
     
-    # (แนะนำให้เปลี่ยนบล็อก if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR): เป็นดังนี้)
-    if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
-      messages += [
-        ("PRE_COLLISION", 33),
-        ("PCS_HUD", 1),
-      ]
+  
       # ถ้าเป็น TSS2 ให้ดึง ACC_CONTROL มาแบบอ่าน Signals 
       # เพื่อให้ดึงค่า DISTANCE ออกมาได้
       # คุณต้องมั่นใจว่าในไฟล์ DBC ของรถคุณมีสัญญาณ DISTANCE อยู่ใน ACC_CONTROL
