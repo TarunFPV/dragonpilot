@@ -68,6 +68,9 @@ class CarState(CarStateBase):
     self._right_blindspot_d1 = 0
     self._right_blindspot_d2 = 0
     self._right_blindspot_counter = 0
+    # [MODIFIED]: เพิ่มตัวแปรสำหรับรับค่าปุ่ม Distance (SnG Hack)
+    self.enable_distance_btn = True
+    self.distance_btn = 0
 
 
   def update(self, cp, cp_cam):
@@ -185,6 +188,14 @@ class CarState(CarStateBase):
       if not (self.CP.flags & ToyotaFlags.SMART_DSU.value):
         self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["PCS_HUD"]["FCW"])
+      # [MODIFIED]: อ่านค่าการกดปุ่มปรับระยะห่างบนพวงมาลัย (ถ้ากดปุ่ม ค่าจะเป็น 1 ถ้าไม่ได้กดจะเป็น 0)
+    # [MODIFIED]: อ่านค่าจากปุ่มปรับระยะห่าง (Distance Button) แบบปลอดภัย
+    if self.enable_distance_btn and self.CP.carFingerprint in TSS2_CAR:
+      # ตรวจสอบก่อนว่ามีคีย์ DISTANCE อยู่ใน CAN Message หรือไม่ เพื่อป้องกัน Error
+      if "DISTANCE" in cp_cam.vl["ACC_CONTROL"]:
+        self.distance_btn = 1 if cp_cam.vl["ACC_CONTROL"]["DISTANCE"] == 1 else 0
+      else:
+        self.distance_btn = 0
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
@@ -323,11 +334,27 @@ class CarState(CarStateBase):
         ("LKAS_HUD", 1),
       ]
 
+    # --- จุดที่ต้องแก้ไข ---
     if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       messages += [
         ("PRE_COLLISION", 33),
-        ("ACC_CONTROL", 33),
+        ("ACC_CONTROL", 33), # เพิ่ม "DISTANCE" เข้าไปในนี้ไม่ได้โดยตรงเพราะโครงสร้าง DP ต่างจาก Tapecom
         ("PCS_HUD", 1),
       ]
+    
+    # วิธีที่ปลอดภัยที่สุดสำหรับ Dragonpilot คือการใช้การดึงค่าแบบสัญญาณ (Signals) 
+    # แต่เนื่องจาก DP ใช้โครงสร้าง messages list ถ้าคุณต้องการดึง DISTANCE
+    # ให้คุณเปลี่ยนบรรทัด ("ACC_CONTROL", 33) เป็นการประกาศแบบลงลึกดังนี้ครับ:
+    
+    # (แนะนำให้เปลี่ยนบล็อก if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR): เป็นดังนี้)
+    if CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
+      messages += [
+        ("PRE_COLLISION", 33),
+        ("PCS_HUD", 1),
+      ]
+      # ถ้าเป็น TSS2 ให้ดึง ACC_CONTROL มาแบบอ่าน Signals 
+      # เพื่อให้ดึงค่า DISTANCE ออกมาได้
+      # คุณต้องมั่นใจว่าในไฟล์ DBC ของรถคุณมีสัญญาณ DISTANCE อยู่ใน ACC_CONTROL
+      messages.append(("ACC_CONTROL", 33))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
