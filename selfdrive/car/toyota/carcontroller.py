@@ -241,14 +241,13 @@ class CarController:
       # Lexus IS uses a different cancellation message
       if pcm_cancel_cmd and self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
         can_sends.append(toyotacan.create_acc_cancel_command(self.packer))
-      # [แก้ไข]: เปลี่ยน CS.CP เป็น self.CP
       elif self.CP.openpilotLongitudinalControl:
-        # [แก้ไข]: เติม toyotacan. ไว้ข้างหน้า และใช้ getattr เพื่อกัน Error
-        can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type, getattr(CS, 'distance_btn', 0)))
+        # [แก้ไข]: ลบ getattr(CS, 'distance_btn', 0) ออกเพื่อป้องกัน TypeError
+        can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type))
         self.accel = pcm_accel_cmd
       else:
-        # [แก้ไข]: เติม toyotacan. ไว้ข้างหน้า และใช้ getattr เพื่อกัน Error
-        can_sends.append(toyotacan.create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type, getattr(CS, 'distance_btn', 0)))
+        # [แก้ไข]: ลบ getattr(CS, 'distance_btn', 0) ออกเพื่อป้องกัน TypeError
+        can_sends.append(toyotacan.create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type))
 
     if self.frame % 2 == 0 and self.CP.enableGasInterceptor and self.CP.openpilotLongitudinalControl:
       # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.
