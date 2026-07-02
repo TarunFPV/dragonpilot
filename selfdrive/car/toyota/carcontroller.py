@@ -58,7 +58,8 @@ class CarController:
     self.alert_active = False
     self.last_standstill = False
     self.standstill_req = False
-    self.standstill_hack = True  # <--- [เพิ่มโค้ดบรรทัดนี้ลงไปตรงนี้ได้เลยครับ]
+    self.standstill_hack = False  # อย่า hardcode เป็น True ถาวร ไม่งั้นระบบจะไม่ส่ง standstill request เลย
+                                   # ซึ่งขัดกับฟีเจอร์ Stop and Go ที่ต้องการ (ดูเงื่อนไข standstill_req ด้านล่าง)
     self.steer_rate_counter = 0
 
     self.packer = CANPacker(dbc_name)
