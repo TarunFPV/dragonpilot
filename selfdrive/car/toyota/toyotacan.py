@@ -33,18 +33,18 @@ def create_lta_steer_command(packer, steer_control_type, steer_angle, steer_req,
   return packer.make_can_msg("STEERING_LTA", 0, values)
 
 
-def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead, acc_type, fcw_alert):
-  # TODO: find the exact canceling bit that does not create a chime
+# [MODIFIED]: แก้ไขให้รับค่า distance เพื่อใช้งาน Stop and Go ได้เหมือนของ Tapecom
+def create_accel_command(packer, accel, pcm_cancel, standstill_req, lead, acc_type, distance, fcw_alert=0):
   values = {
     "ACCEL_CMD": accel,
     "ACC_TYPE": acc_type,
-    "DISTANCE": 0,
+    "DISTANCE": distance,     # <--- ส่งค่าปุ่มกดลง CAN Bus ที่นี่
     "MINI_CAR": lead,
     "PERMIT_BRAKING": 1,
     "RELEASE_STANDSTILL": not standstill_req,
     "CANCEL_REQ": pcm_cancel,
     "ALLOW_LONG_PRESS": 1,
-    "ACC_CUT_IN": fcw_alert,  # only shown when ACC enabled
+    "ACC_CUT_IN": fcw_alert,  
   }
   return packer.make_can_msg("ACC_CONTROL", 0, values)
 
