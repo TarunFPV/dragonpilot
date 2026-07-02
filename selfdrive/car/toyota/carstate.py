@@ -188,15 +188,15 @@ class CarState(CarStateBase):
       if not (self.CP.flags & ToyotaFlags.SMART_DSU.value):
         self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["PCS_HUD"]["FCW"])
-      # [MODIFIED]: อ่านค่าการกดปุ่มปรับระยะห่างบนพวงมาลัย (ถ้ากดปุ่ม ค่าจะเป็น 1 ถ้าไม่ได้กดจะเป็น 0)
-      # ใช้ cp_acc แทน cp_cam ตรงๆ เพราะ ACC_CONTROL อาจอยู่คนละบัสกัน ขึ้นกับว่ารถอยู่ใน RADAR_ACC_CAR หรือไม่
-      # (cp_acc คำนวณไว้แล้วด้านบน) ถ้าเช็คแค่ TSS2_CAR แล้วดึงจาก cp_cam ตรงๆ รถกลุ่ม RADAR_ACC_CAR
-      # จะไม่มีคีย์ ACC_CONTROL ใน cp_cam เลย ทำให้เกิด KeyError ทุกเฟรม -> controlsd crash วนลูป -> จอดำ
-      if self.enable_distance_btn:
-        if "DISTANCE" in cp_acc.vl["ACC_CONTROL"]:
+      # [MODIFIED]: อ่านค่าการกดปุ่มปรับระยะห่างแบบปลอดภัยที่สุด ป้องกัน KeyError จอดำ
+    if self.enable_distance_btn:
+      if self.CP.carFingerprint in TSS2_CAR:
+        try:
           self.distance_btn = 1 if cp_acc.vl["ACC_CONTROL"]["DISTANCE"] == 1 else 0
-        else:
+        except KeyError:
           self.distance_btn = 0
+      else:
+        self.distance_btn = 0
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
     # these cars are identified by an ACC_TYPE value of 2.
